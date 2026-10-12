@@ -1,0 +1,94 @@
+RESEARCH PAPERS AND DATASETS REFERRED TO IN OUR DISCUSSION
+Prepared: 2026-10-13
+
+This is a simple reference list of the papers and public datasets explicitly
+discussed for this project. The datasets are listed separately from papers.
+Background sensor papers are not validation studies of our cervical marker
+panel or hardware.
+
+RESEARCH PAPERS
+
+1. Verlaat, W.; Snoek, B. C.; Heideman, D. A. M.; et al. (2018).
+   Identification and Validation of a 3-Gene Methylation Classifier for
+   HPV-Based Cervical Screening on Self-Samples.
+   Clinical Cancer Research, 24(14), 3456-3464.
+   DOI: 10.1158/1078-0432.CCR-17-3615
+   https://doi.org/10.1158/1078-0432.CCR-17-3615
+   Why it came up: The study built and independently validated a classifier
+   using ASCL1, LHX8, and ST6GALNAC5 for CIN3 detection in hrHPV-positive
+   lavage and brush self-samples. Its assay and cohorts differ from ours.
+
+2. El-Zein, M.; Cheishvili, D.; Szyf, M.; Franco, E. L. (2024).
+   Validation of Novel DNA Methylation Markers in Cervical Precancer and Cancer.
+   International Journal of Cancer, 154(1), 104-113.
+   DOI: 10.1002/ijc.34686
+   https://doi.org/10.1002/ijc.34686
+   Why it came up: The paper evaluates methylation markers including CA10,
+   DPP10, FMN2, and HAS1 and uses public datasets including GSE99511 and
+   GSE46306 as part of its analyses. It is relevant evidence, but it does not
+   validate our exact selected panel or trained model.
+
+3. Widiasti, I.; Novianti, P. W. (2026).
+   Integrative Analyses of Individual Patient Genomic-Data to Discover Novel
+   Biomarkers: Application to Cervical Pre-Cancer DNA-Methylation Datasets.
+   Cancer Informatics, 25, 1.
+   DOI: 10.1177/11769351261454663
+   https://doi.org/10.1177/11769351261454663
+   Why it came up: The paper combines evidence across four GEO methylation
+   studies and reports candidate genes. It supports looking for external
+   cohorts and cross-study evidence; it does not directly validate our chosen
+   CpG panel or model.
+
+4. Biagi, L.; Ramkissoon, C. M.; Facchinetti, A.; Leal, Y.; Vehi, J. (2017).
+   Modeling the Error of the Medtronic Paradigm Veo Enlite Glucose Sensor.
+   Sensors, 17(6), 1361.
+   DOI: 10.3390/s17061361
+   https://doi.org/10.3390/s17061361
+   Why it came up: It models measurement noise, calibration error, and drift
+   for a continuous glucose monitor. Its error distributions and parameter
+   values do not apply to our sensor.
+
+5. Sedlackova, E.; Bytesnikova, Z.; Birgusova, E.; Svec, P.; Ashrafi, A. M.;
+   Estrela, P.; Richtera, L. (2020).
+   Label-Free DNA Biosensor Using Modified Reduced Graphene Oxide Platform as
+   a DNA Methylation Assay.
+   Materials, 13(21), 4936.
+   DOI: 10.3390/ma13214936
+   https://doi.org/10.3390/ma13214936
+   Why it came up: It reports calibration and repeatability experiments for a
+   DNA methylation biosensor. Its analyte and assay differ from our proposed
+   kit, so measured performance values should not be transferred.
+
+
+PUBLIC DATASETS USED IN THIS PROJECT
+
+A. GEO: GSE99511
+   Title: Identification and validation of a novel 3-gene methylation
+   classifier for HPV-based cervical screening on self-samples.
+   GEO record: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE99511
+   Project use: Main development cohort in our analysis. Our current
+   Normal-versus-CIN3 subset contains 28 Normal and 36 CIN3 samples; cancer
+   samples are excluded from that binary task.
+
+B. GEO: GSE46306
+   GEO record: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE46306
+   Project use: Additional evaluation cohort. The project’s processed
+   Normal-versus-CIN3 subset contains 20 Normal and 18 CIN3 samples; cancer
+   samples are excluded from that binary task. Its available labels and HPV
+   status differ from GSE99511, so performance comparisons require caution.
+
+
+OFFICIAL GUIDANCE ALSO REFERRED TO (NOT RESEARCH PAPERS)
+
+A. U.S. Food and Drug Administration. Statistical Guidance on Reporting
+   Results from Studies Evaluating Diagnostic Tests: Guidance for Industry and
+   FDA Staff.
+   https://www.fda.gov/regulatory-information/search-fda-guidance-documents/
+   statistical-guidance-reporting-results-studies-evaluating-diagnostic-tests-
+   guidance-industry-and-fda
+
+B. U.S. Food and Drug Administration. Establishing the Performance
+   Characteristics of In Vitro Diagnostic Devices for the Detection or
+   Detection and Differentiation of Human Papillomaviruses: Guidance for
+   Industry and FDA Staff.
+   https://www.fda.gov/media/92930/download

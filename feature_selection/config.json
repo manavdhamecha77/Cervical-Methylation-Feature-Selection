@@ -1,0 +1,121 @@
+{
+  "_comment": "Configuration for leakage-free feature selection benchmark",
+  "_project": "GSE99511 Cervical Cancer DNA Methylation",
+
+  "data": {
+    "filtered_matrix": "data/GSE99511/processed/filtered_beta_matrix.csv.gz",
+    "metadata": "data/GSE99511/metadata/sample_metadata.csv",
+    "manifest": "data/GSE99511/raw/GPL13534_HumanMethylation450_15017482_v.1.1.csv.gz",
+    "primary_classes": ["Normal", "CIN3"],
+    "positive_class": "CIN3",
+    "label_col": "Diagnosis",
+    "gsm_col": "GSM_ID",
+    "sentrix_id_col": "Sentrix_ID"
+  },
+
+  "prefilter": {
+    "variance_threshold": 0.001,
+    "prefilter_size_main": 5000,
+    "prefilter_size_sensitivity": 2000,
+    "_note": "Pre-filter runs INSIDE each training fold only. Two runs: main (5000) and sensitivity (2000)."
+  },
+
+  "panel_sizes": [5, 10, 20, 50],
+
+  "selectors": {
+    "mw_filter": {
+      "enabled": true,
+      "description": "Univariate Mann-Whitney U test, top k by p-value"
+    },
+    "lasso": {
+      "enabled": true,
+      "description": "L1 logistic regression, rank by |coef|, top k",
+      "C_grid": [0.001, 0.01, 0.05, 0.1, 0.5, 1.0],
+      "max_iter": 5000
+    },
+    "elastic_net": {
+      "enabled": true,
+      "description": "Elastic net logistic regression, rank by |coef|, top k",
+      "C_grid": [0.001, 0.01, 0.05, 0.1, 0.5, 1.0],
+      "l1_ratio_grid": [0.3, 0.5, 0.7],
+      "max_iter": 5000
+    },
+    "stability_selection": {
+      "enabled": true,
+      "description": "Repeated subsampling (stratified) with L1 LR, rank by selection frequency",
+      "n_subsamples": 100,
+      "subsample_fraction": 0.65,
+      "C": 0.05,
+      "max_iter": 2000,
+      "_runtime_note": "Heaviest method. ~1-3 min per outer fold."
+    },
+    "svm_rfe": {
+      "enabled": true,
+      "description": "Linear SVM recursive feature elimination until k remain",
+      "C": 1.0,
+      "step_fraction": 0.2,
+      "_runtime_note": "Step 20% at a time from pre-filter size. ~5-20s per outer fold."
+    },
+    "mrmr": {
+      "enabled": true,
+      "description": "Greedy maximum relevance - minimum redundancy (pure numpy, no extra package needed)",
+      "_runtime_note": "O(k * prefilter_size) per fold. ~2-5s per fold."
+    },
+    "rf_importance": {
+      "enabled": true,
+      "description": "Random Forest feature importance (mean decrease in impurity), top k",
+      "n_estimators": 200,
+      "max_depth": 10,
+      "min_samples_leaf": 2
+    }
+  },
+
+  "cv": {
+    "outer_splits": 5,
+    "outer_repeats": 10,
+    "inner_splits": 3,
+    "random_seed": 42,
+    "_note": "Outer: 5-fold x 10 repeats = 50 outer folds. Inner: 3-fold for classifier hyperparameter tuning only."
+  },
+
+  "classifiers": {
+    "logreg": {
+      "C_grid": [0.01, 0.1, 1.0, 10.0],
+      "max_iter": 3000,
+      "solver": "liblinear"
+    },
+    "linear_svm": {
+      "C_grid": [0.01, 0.1, 1.0, 10.0],
+      "max_iter": 3000
+    }
+  },
+
+  "permutation_test": {
+    "enabled": true,
+    "n_permutations": 50,
+    "outer_splits": 5,
+    "outer_repeats": 3,
+    "_note": "Run on best (selector, k) combo only to confirm above-chance performance. Uses reduced repeats for speed."
+  },
+
+  "baseline_reproduction": {
+    "enabled": true,
+    "description": "Reproduce existing top-5000 ANOVA + RandomForest under correct repeated nested CV",
+    "k": 5000,
+    "outer_splits": 5,
+    "outer_repeats": 10
+  },
+
+  "parallelism": {
+    "n_jobs": -1,
+    "_note": "Used for outer fold parallelism. Inner loops are sequential to avoid nested parallelism overhead."
+  },
+
+  "output_dir": "results/feature_selection_benchmark",
+
+  "known_markers": {
+    "_source": "Literature (clinical methylation markers for cervical pre-cancer)",
+    "_note": "These are for biological sanity checking only, not validation. Do not report overlap as confirmation.",
+    "genes": ["FAM19A4", "PAX1", "ZNF582", "EPB41L3", "MIR124-2", "JAM3", "CADM1", "MAL", "DAPK1", "RARB", "TWIST1", "RASSF1"]
+  }
+}

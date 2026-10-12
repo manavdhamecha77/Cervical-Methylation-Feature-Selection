@@ -1,0 +1,9 @@
+dataset,k,selector,classifier,benchmark_balanced_accuracy,benchmark_roc_auc,selection_note
+GSE99511,5,rf_importance,logreg,0.5925,0.605,Highest reported within-cohort CV balanced accuracy at this k; exploratory winner selection.
+GSE99511,10,elastic_net,logreg,0.6168,0.644,Highest reported within-cohort CV balanced accuracy at this k; exploratory winner selection.
+GSE99511,20,elastic_net,linear_svm,0.6268,0.6355,Highest reported within-cohort CV balanced accuracy at this k; exploratory winner selection.
+GSE99511,50,mrmr,linear_svm,0.636,0.7529,Highest reported within-cohort CV balanced accuracy at this k; exploratory winner selection.
+GSE46306,5,mw_filter,linear_svm,0.7667,0.7167,Highest reported within-cohort CV balanced accuracy at this k; exploratory winner selection.
+GSE46306,10,mw_filter,logreg,0.7667,0.7875,Highest reported within-cohort CV balanced accuracy at this k; exploratory winner selection.
+GSE46306,20,mw_filter,logreg,0.7167,0.8,Highest reported within-cohort CV balanced accuracy at this k; exploratory winner selection.
+GSE46306,50,rf_importance,logreg,0.7417,0.8125,Highest reported within-cohort CV balanced accuracy at this k; exploratory winner selection.

@@ -1,0 +1,11 @@
+pandas==1.5.3
+numpy==1.26.4
+scipy==1.15.3
+statsmodels==0.15.0
+scikit-learn==1.3.2
+matplotlib==3.7.5
+seaborn==0.12.2
+xgboost==2.0.3
+joblib==1.3.2
+pyarrow==25.0.1
+methylprep==1.7.1

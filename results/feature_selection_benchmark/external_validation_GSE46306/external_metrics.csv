@@ -1,0 +1,17 @@
+model_id,selector,panel_size,classifier,development_samples,external_samples,external_normal,external_cin3,Accuracy,Balanced_Accuracy,Sensitivity,Specificity,F1,ROC_AUC,TP,TN,FP,FN
+rf_importance_k5_logreg,rf_importance,5,logreg,64,38,20,18,0.473684,0.455556,0.111111,0.8,0.166667,0.480556,2,16,4,16
+rf_importance_k5_linear_svm,rf_importance,5,linear_svm,64,38,20,18,0.526316,0.505556,0.111111,0.9,0.181818,0.438889,2,18,2,16
+rf_importance_k10_logreg,rf_importance,10,logreg,64,38,20,18,0.526316,0.5,0.0,1.0,0.0,0.286111,0,20,0,18
+rf_importance_k10_linear_svm,rf_importance,10,linear_svm,64,38,20,18,0.5,0.475,0.0,0.95,0.0,0.297222,0,19,1,18
+rf_importance_k20_logreg,rf_importance,20,logreg,64,38,20,18,0.447368,0.430556,0.111111,0.75,0.16,0.336111,2,15,5,16
+rf_importance_k20_linear_svm,rf_importance,20,linear_svm,64,38,20,18,0.526316,0.502778,0.055556,0.95,0.1,0.319444,1,19,1,17
+rf_importance_k50_logreg,rf_importance,50,logreg,64,38,20,18,0.526316,0.5,0.0,1.0,0.0,0.366667,0,20,0,18
+rf_importance_k50_linear_svm,rf_importance,50,linear_svm,64,38,20,18,0.5,0.475,0.0,0.95,0.0,0.333333,0,19,1,18
+mw_filter_k5_logreg,mw_filter,5,logreg,64,38,20,18,0.526316,0.502778,0.055556,0.95,0.1,0.519444,1,19,1,17
+mw_filter_k5_linear_svm,mw_filter,5,linear_svm,64,38,20,18,0.526316,0.502778,0.055556,0.95,0.1,0.497222,1,19,1,17
+mw_filter_k10_logreg,mw_filter,10,logreg,64,38,20,18,0.526316,0.502778,0.055556,0.95,0.1,0.447222,1,19,1,17
+mw_filter_k10_linear_svm,mw_filter,10,linear_svm,64,38,20,18,0.526316,0.502778,0.055556,0.95,0.1,0.422222,1,19,1,17
+mw_filter_k20_logreg,mw_filter,20,logreg,64,38,20,18,0.526316,0.502778,0.055556,0.95,0.1,0.588889,1,19,1,17
+mw_filter_k20_linear_svm,mw_filter,20,linear_svm,64,38,20,18,0.526316,0.502778,0.055556,0.95,0.1,0.561111,1,19,1,17
+mw_filter_k50_logreg,mw_filter,50,logreg,64,38,20,18,0.526316,0.502778,0.055556,0.95,0.1,0.586111,1,19,1,17
+mw_filter_k50_linear_svm,mw_filter,50,linear_svm,64,38,20,18,0.605263,0.613889,0.777778,0.45,0.651163,0.638889,14,9,11,4

@@ -1,0 +1,23 @@
+======================================================================
+BATCH COVARIATE REPORT: Sentrix Chip vs Diagnosis
+======================================================================
+
+Chip x Diagnosis counts:
+Diagnosis   CIN3  Normal
+Sentrix_ID              
+9340996068     7       3
+9340996078     8       4
+9340996136     7       4
+9340996138     7       4
+9376538107     4       4
+9828653103     3       9
+
+[OK] No pure-class chips detected (each chip has samples from >1 class).
+
+Per-chip class fractions (CIN3 / total):
+   9340996068: 7/10 = 0.70 CIN3
+   9340996078: 8/12 = 0.67 CIN3
+   9340996136: 7/11 = 0.64 CIN3
+   9340996138: 7/11 = 0.64 CIN3
+   9376538107: 4/8 = 0.50 CIN3
+   9828653103: 3/12 = 0.25 CIN3
