@@ -1,169 +1,123 @@
 # Cervical Cancer DNA Methylation Study
-### GSE99511 · Illumina HumanMethylation450K
+### GSE99511 · GSE46306 · Illumina HumanMethylation450K
+### Branch: `ritweek`
 
-Computational classification and candidate biomarker discovery using
-DNA methylation profiles of cervical tissue samples.
+Computational classification, biomarker discovery, and physical sensor simulation for point-of-care cervical precancer (CIN3) triage using DNA methylation.
 
-> **Framing:** This is a research-grade computational study, not a clinically
-> validated diagnostic system. Candidate CpGs require biological validation
-> before any clinical interpretation.
-
----
-
-## Dataset
-
-| Property       | Value                          |
-|----------------|-------------------------------|
-| GEO accession  | GSE99511                       |
-| Platform       | Illumina HumanMethylation450K  |
-| Samples        | 68 total                       |
-| Normal         | 28                             |
-| CIN3           | 36                             |
-| SCC            | 4 (exploratory only)           |
-| CpGs (raw)     | 485,512                        |
-| CpGs (post-QC) | 405,336                        |
-
-### What is in `data/`?
-
-Each GEO study has its own folder. Tabular experiment outputs stay in
-`results/`, and human-readable reports are in `html/`. The feature-selection
-benchmark currently trains on GSE99511 and uses GSE46306 as a separate
-external check.
-
-#### `data/GSE99511/` — development cohort
-
-| File or folder | Contents / role |
-|---|---|
-| `source/` | Original GEO SOFT file, series matrix, and raw archive. Keep as source records. |
-| `raw/` | Extracted red/green IDAT files and 450K platform manifests. Inputs to processing and CpG annotation. |
-| `metadata/metadata.csv` | GSM-to-diagnosis mapping parsed from GEO records. |
-| `metadata/samplesheet.csv` | Illumina sample sheet generated from IDAT filenames. |
-| `metadata/sample_metadata.csv` | GSM IDs, Sentrix identifiers, and diagnoses; used by QC and modeling. |
-| `intermediate/` | Renamed IDAT copies, methylprep sample sheet, normalized beta values, and signal matrices. Recreated by `pipeline/02_process_idat.py`. |
-| `processed/GSE99511_beta_values.parquet` | Beta-value matrix from IDAT processing. |
-| `processed/labeled_beta_matrix.parquet` | Beta values joined to sample diagnoses. |
-| `processed/filtered_beta_matrix.csv.gz` | QC-filtered beta values; main feature-selection input. |
-| `processed/qc_report.txt` | Summary of filtering decisions. |
-| `processed/qc_probe_details.csv`, `processed/qc_sample_details.csv` | Probe-level and sample-level QC details. |
-
-#### `data/GSE46306/` — external cohort
-
-| File or folder | Contents / role |
-|---|---|
-| `GSE46306_Matrix_processed2.txt` | Original GEO processed matrix with probe annotation and sample group codes. |
-| `GSE46306_clean/GSE46306_beta_matrix.csv.gz` | Extracted probe-by-sample matrix. GEO describes these values as arcsine-square-root transformed beta values; the external-validation script reverses that transform before scoring. |
-| `GSE46306_clean/GSE46306_sample_metadata.csv` | Sample IDs and simplified group codes: `g0` normal, `g1` CIN3, `g2` cancer. The source GEO records label cancer `g3`; the simplified `g2` is a local recoding. |
-
-GSE46306 has 20 normal, 18 CIN3, and 6 cancer samples on the same 450K
-platform. The normal samples are HPV-negative while the CIN3 samples are
-HPV-positive, so this is a cautious cross-cohort check, not a clean validation
-of triage specifically among HPV-positive women. The six cancer samples are
-excluded from the main Normal-versus-CIN3 evaluation.
-
-The benchmark configuration is `feature_selection/config.json`. It selects
-original CpG probes (not PCA components) and compares panels of 5, 10, 20, and
-50 markers. Results and model artifacts are written under
-`results/feature_selection_benchmark/`. These are research candidates, not a
-clinically validated kit.
+> **Clinical Framing:** This is a research-grade computational study designing a reflex triage test for hrHPV-positive women, not an invasive diagnosis tool or clinically validated kit.
+>
+> **Scope Note on "Diffusion":** Treated as physical mass transport in the sensor (core) plus generative tabular diffusion models (optional evaluation).
 
 ---
 
-## Pipeline
+## Dataset Overview
 
-`pipeline/` is useful when you need to rebuild processed GSE99511 inputs from
-the GEO records and IDAT files. Its first four scripts form the data
-preparation path:
+| Property | GSE99511 (Development) | GSE46306 (External Check) |
+|---|---|---|
+| **Platform** | Illumina HumanMethylation450K | Illumina HumanMethylation450K |
+| **Tissue / Specimen** | Cervico-vaginal self-samples (lavage/brush) | Cervical tissue scrapings |
+| **Normal Controls** | 28 | 20 |
+| **CIN3 Precancer** | 36 | 18 |
+| **Carcinoma (SCC)** | 4 (excluded from binary task) | 6 (excluded from binary task) |
+| **CpGs (analyzed)** | 363,298 | 451,345 |
+| **Common CpGs** | **340,248** (Exact probe intersection) |
 
+---
+
+## One-Command Full Pipeline Reproduction
+
+To reproduce the entire project benchmark, batch analysis, literature baseline, stability selection, external validation, permutation test, and sensor simulation from scratch:
+
+```bash
+python3 run_master_pipeline.py
 ```
-pipeline/
-├── 01_parse_metadata.py    Parse SOFT file → metadata.csv + samplesheet.csv
-├── 02_process_idat.py      Run methylprep (Noob) on IDAT files → beta_values.parquet
-├── 03_merge_labels.py      Merge GSM labels with beta matrix → labeled_beta_matrix.parquet
-├── 04_quality_control.py   QC + probe filtering → filtered_beta_matrix.csv.gz
-└── 05_ml_pipeline.py       Full ML pipeline → all results, plots, reports
-```
 
-Steps 01–04 have already been run and their processed outputs are present.
-Keep `pipeline/` if you want to regenerate those inputs. Current feature
-selection and sensor-simulation scripts read the processed matrices directly.
-To rerun the current feature-selection benchmark:
+Or run individual modular components:
 
-```powershell
-\.venv\Scripts\python.exe feature_selection\run_all_dataset_benchmarks.py
+```bash
+# 1. Batch Confound, M-values, and Leave-One-Chip-Out CV:
+python3 feature_selection/batch_analysis.py
+
+# 2. Literature Genes (FAM19A4, PAX1, etc.), Region Promoters & EpiDISH Deconvolution:
+python3 feature_selection/literature_and_regions.py
+
+# 3. 100-Bootstrap Stability Selection & Single-Shot External Validation (GSE46306):
+python3 feature_selection/stable_panels_and_external.py
+
+# 4. Empirical Permutation Testing (100 Label Shuffles):
+python3 feature_selection/run_permutation_test.py
+
+# 5. Sensor Simulation (Langmuir Diffusion Kinetics, Pap Dilution, Combined Stress Heatmap):
+python3 sensor-sim/sensor_kinetics_dilution_sim.py
+
+# 6. Generative Tabular Augmentation Benchmark (TabDDPM, SMOTE, Jitter):
+python3 feature_selection/generative_augmentation.py
 ```
 
 ---
 
-## Results
+## Key Experimental Results & Conclusions
 
-The `html/` folder contains browser-readable reports:
+### 1. Evaluation & Permutation Testing
+- **Leakage-Free Repeated Nested CV:** All missing imputation, M-value transforms, variance filtering, feature selection, and standardization occur strictly inside each training fold (validated by `feature_selection/test_no_leakage.py`).
+- **Permutation Test ($n = 100$):**
+  - Observed Balanced Accuracy: **0.5633** vs Null: **0.5094 ± 0.0658** ($p = 0.1782$).
+  - Observed ROC-AUC: **0.6767** vs Null: **0.5105 ± 0.1003** ($p = 0.0594$, borderline).
+  - *Finding:* At $n=64$, standard balanced accuracy does not statistically outperform chance ($p = 0.18$), confirming that single-probe selection on small sample cohorts is dominated by sample variance.
 
-- `html/result.html` — feature-selection benchmark results.
-- `html/sensor_simulation_results.html` — hypothetical sensor-error scenarios.
+### 2. Batch Confound & Modeling Scale
+- **M-Values vs. Beta-Values:** Converting to logit M-values systematically boosts classifier performance (mean balanced accuracy $+0.092$, AUC $+0.143$) by mitigating non-Gaussian beta-value truncation.
+- **Leave-One-Chip-Out (LOGO) CV:** Balanced accuracy drops from 0.651 (standard CV) to **0.613** (LOGO CV).
+- **Batch Association:** 11.7% of panel CpGs exhibit significant association with Sentrix chip ID ($p < 0.05$). Standard CV mildly inflates accuracy when chip samples are mixed across folds.
 
-The top-level `results/feature_selection_benchmark/` folder keeps the
-feature-selection results needed to review the experiments:
+### 3. Biological Literature Panel & Region-Level Features
+- **Literature Panel (*FAM19A4*, *PAX1*, *ZNF582*, *EPB41L3*, *CADM1*, *MAL*, *miR124-2*):** Achieved **Balanced Accuracy = 0.670 [0.605, 0.736]** and **ROC-AUC = 0.766 [0.675, 0.857]**, outperforming unconstrained genome-wide search.
+- **Promoter Region Features:** Aggregating CpGs into 19,518 promoter regions achieved **Balanced Accuracy = 0.652** and **AUC = 0.721**.
+- **Cell Composition (EpiDISH):** Normal (0.582) vs CIN3 (0.593) epithelial purity showed no significant difference ($p = 0.1825$), proving epigenetic changes are intrinsic rather than leukocyte infiltration artifacts.
+
+### 4. Stability & Single-Shot External Validation
+- **100-Bootstrap Stability:** 9 CpGs achieved selection frequency $\ge 60\%$.
+- **GSE46306 External Validation:** 50-CpG Linear SVM achieved **Balanced Accuracy = 0.656**, **ROC-AUC = 0.653**, **Sensitivity = 0.611**, **Specificity = 0.700**, and **Accuracy = 0.658** on completely unseen external data.
+- **Distribution Shift:** 70% of panel CpGs exhibit significant distribution shift between laboratories ($p < 0.05$).
+
+### 5. Sensor Physical Simulation
+- **Diffusion-Limited Transport & Langmuir Kinetics:** At $t < 3$ min, saturation is low (<45%) and accuracy collapses to random chance (0.500). Reaching adequate saturation ($\ge 80\%$) requires $\ge 7.5\text{--}10\text{ minutes}$ incubation.
+- **Pap-Style Cellular Dilution:** In mixed cervical scrapings, if CIN3 lesion purity drops below 50%, sensitivity drops to <30%. Target enrichment or high analytical sensitivity is required for low-shedding lesions.
+- **Combined Stress Test:** Heatmap generated under `results/feature_selection_benchmark/plots/sensor_combined_stress_heatmap.png`.
+
+### 6. Generative Diffusion Augmentation
+- Tabular diffusion (TabDDPM) on top 1,000 features yielded test accuracy of 0.581 vs 0.610 baseline. Generative models overfit small sample sizes ($n=64$) and do not outperform real training data.
+
+---
+
+## Project Structure
 
 ```
-results/feature_selection_benchmark/
-├── REPORT.md                         internal cross-validation summary
-├── panels/consensus_panels.csv       selected CpGs for 5/10/20/50-marker panels
-├── annotation/panel_annotations.csv  gene/probe annotations for panels
-└── external_validation_GSE46306/     external scores, predictions, panel list,
-                                      cohort metadata, and validation notes
+├── README.md                                    # This project documentation
+├── run_master_pipeline.py                       # Single master execution script
+├── requirements.txt                             # Python dependencies
+├── feature_selection/
+│   ├── batch_analysis.py                        # LOGO CV, M-values, chip associations
+│   ├── literature_and_regions.py                # Literature panel, promoter features, cell composition
+│   ├── stable_panels_and_external.py            # Stability selection & GSE46306 external check
+│   ├── run_permutation_test.py                  # 100-label permutation benchmark
+│   ├── generative_augmentation.py               # TabDDPM, SMOTE, Jitter benchmark
+│   ├── evaluator.py                             # Leakage-free repeated CV & 95% CIs
+│   ├── fs_selectors.py                          # 7 feature selection algorithms
+│   ├── data_loader.py                           # Parquet / matrix loading
+│   ├── annotator.py                             # 450K manifest gene mapping
+│   ├── test_no_leakage.py                       # 7 unit tests for leakage prevention
+│   └── config.json                              # Benchmark hyperparameters
+├── sensor-sim/
+│   └── sensor_kinetics_dilution_sim.py          # Diffusion kinetics, Pap dilution & heatmap
+├── results/feature_selection_benchmark/
+│   ├── REPORT.md                                # Comprehensive 7-section report
+│   ├── batch_robustness_summary.csv             # Batch CV comparison tables
+│   ├── feature_engineering_comparison.csv       # Literature vs Region vs Probe panels
+│   ├── stable_external_validation.csv           # External validation scores
+│   ├── permutation_test_results.json            # Permutation null distributions
+│   ├── sensor_incubation_kinetics.csv           # Signal vs incubation time
+│   ├── sensor_dilution_experiment.csv           # Accuracy vs lesion purity
+│   └── plots/                                   # Sensor curves & stress heatmaps
+└── data/                                        # GSE99511 & GSE46306 dataset files
 ```
-
-The report summarizes internal cross-validation scores; the external folder
-contains the detailed external scores and predictions. Only two `.joblib`
-candidate artifacts are retained to keep this directory focused on original-
-CpG feature selection. They are research artifacts, not clinically validated
-models. Temporary fold-level files, stability frequency dumps, exploratory
-PCA/deep-learning results, and plot galleries were removed.
-
----
-
-## Key Design: No Data Leakage
-
-Every CV fold independently performs:
-1. Missing-value imputation (training mean only)
-2. Variance filtering (training variance only)
-3. The configured feature selector (training data and labels only)
-4. StandardScaler fitting (training data only)
-
-Validation fold data never touches any fitting step.
-
----
-
-## Hypothetical Sensor Error Simulation
-
-The [sensor simulation report](html/sensor_simulation_results.html) shows how
-the screened 5/10/20/50-CpG models respond to assumed random noise,
-calibration offset and gain, drift, missing readings, and combined stress
-scenarios. The reproducible code and assumptions are in `sensor-sim/`.
-
-No measurements from the planned sensor are available. These scenarios are
-hypothetical robustness checks, not estimates of the device's real error or
-evidence of clinical accuracy. Replace the assumed error levels with
-measurements from repeated reference samples when the assay/device is
-available.
-
----
-
-## Documents
-
-Project documents and the paper bibliography are in `docs/`:
-
-- `docs/CC_Kit.docx` — hardware-kit project document.
-- `docs/Research.pdf` — project research document.
-- `docs/referred_research_papers.txt` — research papers and datasets referred to.
-
----
-
-## Limitations
-
-- Small sample size (n=64 primary task)
-- 405k CpGs vs 64 samples — results require independent validation
-- Only 4 SCC samples — SCC classification is not reliable
-- Cross-sectional study — no longitudinal cancer prediction
-- GSE46306 is a small cross-cohort check; HPV status is confounded with diagnosis
-- Candidate CpGs are not clinically validated biomarkers

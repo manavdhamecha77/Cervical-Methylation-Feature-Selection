@@ -1,0 +1,5 @@
+Augmentation_Method,Balanced_Accuracy_Mean,Balanced_Accuracy_Std,ROC_AUC_Mean,Sensitivity_Mean,Specificity_Mean
+None (Baseline),0.6096,0.1242,0.6495,0.6393,0.58
+Gaussian Noise,0.5879,0.1202,0.64,0.6357,0.54
+SMOTE (k-NN),0.6177,0.1394,0.6448,0.5821,0.6533
+Tabular Diffusion (TabDDPM),0.5805,0.0954,0.6007,0.6143,0.5467

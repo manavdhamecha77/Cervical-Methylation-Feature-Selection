@@ -1,0 +1,5 @@
+BATCH EFFECT CONCLUSION:
+1. Leave-One-Chip-Out cross-validation yields mean balanced accuracy of 0.613 vs 0.651 in standard CV.
+2. Excluding the CIN3-predominant chip (9340996078) yields mean balanced accuracy of 0.651.
+3. 11.7% of candidate panel CpGs show statistically significant variation across chips (p < 0.05).
+Conclusion: Chip batch effects mildly INFLATE apparent cross-validation scores when samples from the same chip are shared between training and test sets. Group-aware (leave-one-chip-out) evaluation is essential for realistic performance.

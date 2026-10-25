@@ -220,7 +220,16 @@ def _run_single_fold(fold_args: dict) -> list:
     assert np.isnan(X_train_imp).sum() == 0, "NaNs remain in train after imputation"
     assert np.isnan(X_val_imp).sum() == 0,   "NaNs remain in val after imputation"
 
+    # Optional M-value conversion (log2(beta / (1 - beta)))
+    if config.get("use_m_values", False):
+        eps = 1e-5
+        X_train_imp = np.clip(X_train_imp, eps, 1.0 - eps)
+        X_val_imp   = np.clip(X_val_imp,   eps, 1.0 - eps)
+        X_train_imp = np.log2(X_train_imp / (1.0 - X_train_imp))
+        X_val_imp   = np.log2(X_val_imp   / (1.0 - X_val_imp))
+
     # Step 2: Pre-filter (train variance only)
+
     X_train_pf, X_val_pf, pf_names, _pf_mask = variance_prefilter(
         X_train_imp, X_val_imp, cpg_names,
         threshold=config["prefilter"]["variance_threshold"],
@@ -353,9 +362,11 @@ def run_nested_cv(
     prefilter_n: int = None,
     n_jobs: int = -1,
     verbose: bool = True,
+    cv_splitter = None,
+    groups: np.ndarray = None,
 ) -> pd.DataFrame:
     """
-    Run the full repeated nested CV benchmark.
+    Run the full repeated nested CV benchmark (or custom cv_splitter such as leave-one-chip-out).
 
     Parameters
     ----------
@@ -367,6 +378,8 @@ def run_nested_cv(
     prefilter_n : override prefilter_size_main from config
     n_jobs      : joblib parallelism (-1 = all cores)
     verbose     : print progress
+    cv_splitter : optional cross-validation splitter (e.g. LeaveOneGroupOut)
+    groups      : optional sample group labels for group-aware CV (e.g. Sentrix_ID chips)
 
     Returns
     -------
@@ -375,35 +388,48 @@ def run_nested_cv(
     from joblib import Parallel, delayed
 
     cv_cfg = config["cv"]
-    outer_splits  = cv_cfg["outer_splits"]
-    outer_repeats = cv_cfg["outer_repeats"]
-    base_seed     = cv_cfg["random_seed"]
+    outer_splits  = cv_cfg.get("outer_splits", 5)
+    outer_repeats = cv_cfg.get("outer_repeats", 10)
+    base_seed     = cv_cfg.get("random_seed", 42)
 
     panel_sizes    = config["panel_sizes"]
     selector_names = selector_names or SELECTOR_NAMES
     prefilter_n    = prefilter_n or config["prefilter"]["prefilter_size_main"]
 
-    total_folds = outer_splits * outer_repeats
+    if cv_splitter is not None:
+        splits = list(cv_splitter.split(X, y, groups))
+        total_folds = len(splits)
+        if verbose:
+            print(f"\n[Evaluator] Custom CV (e.g. Group/Chip-aware): {total_folds} outer folds")
+    else:
+        rskf = RepeatedStratifiedKFold(
+            n_splits=outer_splits,
+            n_repeats=outer_repeats,
+            random_state=base_seed,
+        )
+        splits = list(rskf.split(X, y))
+        total_folds = len(splits)
+        if verbose:
+            print(f"\n[Evaluator] Repeated nested CV: {outer_splits}-fold x {outer_repeats} repeats")
+
     if verbose:
-        print(f"\n[Evaluator] Repeated nested CV: {outer_splits}-fold x {outer_repeats} repeats")
         print(f"[Evaluator] Selectors: {selector_names}")
         print(f"[Evaluator] Panel sizes k: {panel_sizes}")
         print(f"[Evaluator] Pre-filter N: {prefilter_n}")
         print(f"[Evaluator] Total outer folds: {total_folds}")
         print(f"[Evaluator] Parallelism: n_jobs={n_jobs}")
 
-    rskf = RepeatedStratifiedKFold(
-        n_splits=outer_splits,
-        n_repeats=outer_repeats,
-        random_state=base_seed,
-    )
-
     fold_args_list = []
     _this_dir = os.path.dirname(os.path.abspath(__file__))
-    for fold_num, (train_idx, val_idx) in enumerate(rskf.split(X, y)):
-        repeat_idx     = fold_num // outer_splits
-        outer_fold_idx = fold_num  % outer_splits
+    for fold_num, (train_idx, val_idx) in enumerate(splits):
+        if cv_splitter is not None:
+            repeat_idx = 0
+            outer_fold_idx = fold_num
+        else:
+            repeat_idx     = fold_num // outer_splits
+            outer_fold_idx = fold_num  % outer_splits
         fold_args_list.append({
+
             "outer_fold_idx": outer_fold_idx,
             "repeat_idx":     repeat_idx,
             "train_idx":      train_idx,
@@ -649,9 +675,11 @@ def run_permutation_test(
 
 def aggregate_results(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Aggregate per-fold results into mean ± std table.
+    Aggregate per-fold results into mean ± std and 95% CI table.
     One row per (selector, k, classifier, prefilter_n).
     """
+    from scipy import stats
+
     metrics = ["Balanced_Accuracy", "ROC_AUC", "Sensitivity",
                "Specificity", "Precision", "F1", "Accuracy"]
     group_cols = ["selector", "k", "classifier", "prefilter_n"]
@@ -663,13 +691,33 @@ def aggregate_results(df: pd.DataFrame) -> pd.DataFrame:
         if isinstance(keys, str):
             keys = (keys,)
         rec = dict(zip(group_cols, keys))
-        rec["n_folds"] = len(grp)
+        n_folds = len(grp)
+        rec["n_folds"] = n_folds
         for m in metrics:
             if m in grp.columns:
                 vals = grp[m].dropna()
-                rec[f"mean_{m}"] = round(vals.mean(), 4) if len(vals) else np.nan
-                rec[f"std_{m}"]  = round(vals.std(),  4) if len(vals) else np.nan
-                rec[f"n_{m}"]    = len(vals)
+                n_m = len(vals)
+                if n_m > 0:
+                    mean_val = float(vals.mean())
+                    std_val  = float(vals.std()) if n_m > 1 else 0.0
+                    se_val   = std_val / np.sqrt(n_m) if n_m > 1 else 0.0
+                    t_crit   = stats.t.ppf(0.975, df=n_m - 1) if n_m > 1 else 1.96
+                    ci_low   = max(0.0, mean_val - t_crit * se_val)
+                    ci_high  = min(1.0, mean_val + t_crit * se_val)
+                    
+                    rec[f"mean_{m}"] = round(mean_val, 4)
+                    rec[f"std_{m}"]  = round(std_val, 4)
+                    rec[f"ci95_low_{m}"]  = round(ci_low, 4)
+                    rec[f"ci95_high_{m}"] = round(ci_high, 4)
+                    rec[f"{m}_mean_ci95"] = f"{mean_val:.3f} [{ci_low:.3f}, {ci_high:.3f}]"
+                    rec[f"n_{m}"] = n_m
+                else:
+                    rec[f"mean_{m}"] = np.nan
+                    rec[f"std_{m}"]  = np.nan
+                    rec[f"ci95_low_{m}"]  = np.nan
+                    rec[f"ci95_high_{m}"] = np.nan
+                    rec[f"{m}_mean_ci95"] = "n/a"
+                    rec[f"n_{m}"] = 0
         for count_metric in ["TP", "TN", "FP", "FN"]:
             if count_metric in grp.columns:
                 rec[f"sum_{count_metric}"] = int(grp[count_metric].sum())
@@ -682,3 +730,4 @@ def aggregate_results(df: pd.DataFrame) -> pd.DataFrame:
             ascending=[True, True, True]
         ).reset_index(drop=True)
     return agg
+

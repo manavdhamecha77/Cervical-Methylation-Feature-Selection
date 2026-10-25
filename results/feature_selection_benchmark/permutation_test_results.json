@@ -1,0 +1,15 @@
+{
+  "n_permutations": 100,
+  "k": 50,
+  "observed_balanced_accuracy": 0.5633,
+  "observed_roc_auc": 0.6767,
+  "null_balanced_accuracy_mean": 0.5094,
+  "null_balanced_accuracy_std": 0.0658,
+  "null_balanced_accuracy_95th_percentile": 0.6269,
+  "null_roc_auc_mean": 0.5105,
+  "null_roc_auc_std": 0.1003,
+  "null_roc_auc_95th_percentile": 0.6759,
+  "empirical_p_value_balanced_accuracy": 0.1782,
+  "empirical_p_value_roc_auc": 0.0594,
+  "statistically_significant_above_chance_p05": false
+}
