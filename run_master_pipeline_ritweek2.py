@@ -239,103 +239,12 @@ def make_final_artifacts(df_baseline, df_cv, df_panels, df_ext, df_stress):
 
     print(f"[Artifacts] Generated final markdown report: {report_path}")
 
-    # Generate HTML Dashboard
-    html_path = os.path.join(HTML_DIR, "complete_project_dashboard_ritweek2.html")
-    with open(html_path, "w") as f:
-        f.write(f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Cervical Cancer DNA Methylation Benchmark (ritweek2)</title>
-<style>
-  body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 30px auto; max-width: 1300px; color: #24292e; line-height: 1.6; padding: 0 20px; background: #fcfcfc; }}
-  h1, h2, h3 {{ color: #102a43; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }}
-  table {{ border-collapse: collapse; width: 100%; margin: 15px 0 25px; font-size: 13px; background: #fff; }}
-  th, td {{ border: 1px solid #d0d7de; padding: 8px 12px; text-align: left; }}
-  th {{ background-color: #f6f8fa; font-weight: 600; position: sticky; top: 0; }}
-  tr:nth-child(even) {{ background-color: #f9fafb; }}
-  .card {{ background: #ffffff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 22px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }}
-  .badge {{ display: inline-block; padding: 3px 9px; font-size: 12px; font-weight: 600; border-radius: 4px; background: #ddf4ff; color: #0969da; }}
-  .badge-success {{ background: #dafbe1; color: #1a7f37; }}
-  .alert-warning {{ background-color: #fff8c5; border-left: 4px solid #d4a72c; padding: 12px 16px; margin: 15px 0; border-radius: 0 4px 4px 0; }}
-  .alert-success {{ background-color: #dafbe1; border-left: 4px solid #1a7f37; padding: 12px 16px; margin: 15px 0; border-radius: 0 4px 4px 0; }}
-  .stat-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 15px 0; }}
-  .stat-box {{ background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; padding: 15px; text-align: center; }}
-  .stat-box .val {{ font-size: 26px; font-weight: 700; color: #0969da; }}
-  .stat-box .lbl {{ font-size: 12px; color: #57606a; margin-top: 4px; }}
-</style>
-</head>
-<body>
-<h1>Cervical Cancer DNA Methylation: Multi-Cohort Triage Benchmark</h1>
-<p><span class="badge">Branch: ritweek2</span> &bull; <b>Population:</b> hrHPV-positive women &bull; <b>Primary Task:</b> High-Risk Precancer (CIN3+) Detection &bull; <b>Target:</b> AUC &ge; 0.80 Triage Test</p>
+    # Generate Synchronized Research Dashboard
+    import subprocess
+    cmd = ['python3', os.path.join(ROOT, 'generate_dashboard.py')]
+    subprocess.run(cmd, check=True)
+    print(f'[Artifacts] Generated synchronized HTML research dashboard: {os.path.join(HTML_DIR, "complete_project_dashboard_ritweek2.html")}')
 
-<div class="stat-grid">
-  <div class="stat-box">
-    <div class="val">209</div>
-    <div class="lbl">hrHPV+ Development Cohort (GSE99511 + GSE287994)</div>
-  </div>
-  <div class="stat-box">
-    <div class="val">184</div>
-    <div class="lbl">External Untouched Samples (GSE46306 + GSE143752)</div>
-  </div>
-  <div class="stat-box">
-    <div class="val">310,014</div>
-    <div class="lbl">Shared 450K/EPIC Harmonized CpGs</div>
-  </div>
-  <div class="stat-box">
-    <div class="val">0.700 &rarr; 0.814</div>
-    <div class="lbl">ROC-AUC Improvement (Baseline &rarr; Multi-Cohort Panel)</div>
-  </div>
-</div>
-
-<div class="card">
-  <h2>1. Published Baseline Reproduction (Verlaat et al. CCR 2018)</h2>
-  <div class="alert-warning">
-    <b>Objective:</b> Reproduce published 3-gene classifier (<i>ASCL1</i>, <i>LHX8</i>, <i>ST6GALNAC5</i>) on GSE99511 (64 hrHPV+ samples).
-  </div>
-  {df_baseline.to_html(classes="table", index=False)}
-  <p><b>Finding:</b> In-fold cross-validation on array beta values confirms an empirical ROC-AUC of <b>0.7004 (95% CI: 0.5675 - 0.8354)</b>. While targeted multiplex PCR in the original paper reported validation AUCs of 0.88-0.90, reproducing it with array probes establishes our rigorous development baseline.</p>
-</div>
-
-<div class="card">
-  <h2>2. Multi-Cohort Integration &amp; Harmonization</h2>
-  <p>To eliminate sample-size bottlenecks, we integrated high-priority EPIC 850K cohorts:</p>
-  <ul>
-    <li><b>GSE287994 (Bowden et al. 2025):</b> 241 women (145 hrHPV-positive: 29 Benign, 116 CIN3/Cancer). Includes published <i>PAX1</i> (cg16767801) + <i>NREP-AS1</i> (cg23642047) biomarkers.</li>
-    <li><b>GSE143752 (Cheishvili et al. 2020):</b> 186 samples with CIN progression and HPV genotyping. Used as external cross-cohort validation.</li>
-    <li><b>WID-CIN Study (PMC9580141, 1,254 samples):</b> Access audit confirmed data is held in <b>EGA (`EGAS00001005078`)</b> under controlled access requiring DAC authorization.</li>
-  </ul>
-</div>
-
-<div class="card">
-  <h2>3. Nested Cross-Validation Comparison: Elastic Net vs. SVM vs. XGBoost vs. LightGBM</h2>
-  <p>Models evaluated using 5-fold nested CV with in-fold Limma DMP / RFE stability selection and in-fold ComBat batch adjustment:</p>
-  {df_cv.head(16).to_html(classes="table", index=False)}
-</div>
-
-<div class="card">
-  <h2>4. Stable Consensus Biomarker Panels (5, 10, 20, 50 CpGs)</h2>
-  <div class="alert-success">
-    <b>Stability Selection (100 Bootstraps):</b> Feature selection performed purely on training resamples to identify robust consensus biomarkers.
-  </div>
-  {df_panels[df_panels["Panel_Size_k"].isin([5, 10, 20])].head(25).to_html(classes="table", index=False)}
-</div>
-
-<div class="card">
-  <h2>5. Completely Untouched External Cohort Evaluation</h2>
-  <p>Single-shot prospective validation on external cohorts without any parameter tuning:</p>
-  {df_ext.to_html(classes="table", index=False)}
-</div>
-
-<div class="card">
-  <h2>6. Sensor Stress Simulation: Kinetics, Dilution, &amp; Assay Noise</h2>
-  <p>Evaluated under Langmuir diffusion-limited kinetics, assay noise, and cellular dilution (CIN3+ cells diluted with normal background):</p>
-  {pview.to_html(classes="table", index=False)}
-</div>
-
-</body>
-</html>""")
-    print(f"[Artifacts] Generated HTML project dashboard: {html_path}")
 
 
 
